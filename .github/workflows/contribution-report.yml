@@ -27,7 +27,7 @@ jobs:
         run: |
           # List of organizations
           orgs=("rstudio" "posit-dev")  # Updated with your organizations
-          token="${{ secrets.WEEKLY_TOKEN }}"
+          token="${{ secrets.weekly }}"  # Using your new token
 
           repos=""
 
@@ -56,7 +56,7 @@ jobs:
         id: fetch_contributions
         run: |
           repos="${{ steps.fetch_repos.outputs.repos }}"
-          token="${{ secrets.WEEKLY_TOKEN }}"
+          token="${{ secrets.weekly }}"  # Using your new token
 
           # Placeholder for the report
           report="## Weekly Contribution Report\n\n"
@@ -83,6 +83,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
+          git remote set-url origin https://x-access-token:${{ secrets.weekly }}@github.com/AshleyHenry15/github-work.git
           git add report.md
           git commit -m "Update contribution report"
           git push
