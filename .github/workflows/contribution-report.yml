@@ -1,0 +1,59 @@
+name: Contribution Report
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly run at midnight UTC on Sunday
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install required Python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Fetch contributions from GitHub API
+        id: fetch_contributions
+        run: |
+          # Define repositories and your GitHub token
+          repos=("repo1" "repo2" "repo3")  # Replace with your actual repos
+          token="${{ secrets.GITHUB_TOKEN }}"
+
+          # Placeholder for report
+          report="## Weekly Contribution Report\n\n"
+
+          # Loop through each repo to gather contributions
+          for repo in "${repos[@]}"; do
+            report+="### Repository: $repo\n\n"
+            # Fetch issues, PRs, commits, reviews using GitHub API
+            issues=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/issues?state=all")
+            prs=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/pulls?state=all")
+            commits=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/commits?since=2025-03-01T00:00:00Z")
+            reviews=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/pulls/comments")
+
+            # Append contributions to the report
+            report+="**Issues:**\n$issues\n\n"
+            report+="**Pull Requests:**\n$prs\n\n"
+            report+="**Commits:**\n$commits\n\n"
+            report+="**Reviews:**\n$reviews\n\n"
+          done
+
+          echo "$report" > report.md
+
+      - name: Commit and push the report to GitHub
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add report.md
+          git commit -m "Update contribution report"
+          git push
