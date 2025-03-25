@@ -27,7 +27,7 @@ jobs:
         run: |
           # List of organizations
           orgs=("rstudio" "posit-dev")  # Updated with your organizations
-          token="${{ secrets.weekly }}"  # Using your new token
+          token="${{ secrets.WEEKLY }}"  # Using your new token
 
           repos=""
 
