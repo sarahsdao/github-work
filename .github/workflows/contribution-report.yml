@@ -34,9 +34,18 @@ jobs:
           # Loop through each organization and fetch repositories
           for org in "${orgs[@]}"; do
             echo "Fetching repositories for organization: $org"
-            org_repos=$(curl -H "Authorization: token $token" \
-                              "https://api.github.com/orgs/$org/repos?per_page=100" \
-                              | jq -r '.[].full_name')
+            response=$(curl -H "Authorization: token $token" \
+                             "https://api.github.com/orgs/$org/repos?per_page=100")
+            
+            # Debugging: Print raw response
+            echo "Response from GitHub API:"
+            echo "$response"
+
+            # Check if response is an array and contain 'full_name'
+            # If the response is not an array, we should inspect and adjust accordingly
+            org_repos=$(echo "$response" | jq -r 'if type == "array" then .[] | .full_name else "No valid repos" end')
+
+            # Append repos to the list
             repos+="$org_repos\n"
           done
 
