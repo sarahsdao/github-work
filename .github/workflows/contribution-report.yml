@@ -20,20 +20,40 @@ jobs:
       - name: Install required Python packages
         run: |
           python -m pip install --upgrade pip
-          pip install requests
+          pip install requests jq
 
-      - name: Fetch contributions from GitHub API
+      - name: Fetch repositories from multiple organizations
+        id: fetch_repos
+        run: |
+          # List of organizations
+          orgs=("rstudio" "posit-dev")  # Updated with your organizations
+          token="${{ secrets.WEEKLY_TOKEN }}"
+
+          repos=""
+
+          # Loop through each organization and fetch repositories
+          for org in "${orgs[@]}"; do
+            echo "Fetching repositories for organization: $org"
+            org_repos=$(curl -H "Authorization: token $token" \
+                              "https://api.github.com/orgs/$org/repos?per_page=100" \
+                              | jq -r '.[].full_name')
+            repos+="$org_repos\n"
+          done
+
+          echo "Repositories: $repos"
+          echo "::set-output name=repos::$repos"
+
+      - name: Fetch contributions from all repositories
         id: fetch_contributions
         run: |
-          # Define repositories and your GitHub token
-          repos=("repo1" "repo2" "repo3")  # Replace with your actual repos
-          token="${{ secrets.GITHUB_TOKEN }}"
+          repos="${{ steps.fetch_repos.outputs.repos }}"
+          token="${{ secrets.WEEKLY_TOKEN }}"
 
-          # Placeholder for report
+          # Placeholder for the report
           report="## Weekly Contribution Report\n\n"
 
           # Loop through each repo to gather contributions
-          for repo in "${repos[@]}"; do
+          for repo in $repos; do
             report+="### Repository: $repo\n\n"
             # Fetch issues, PRs, commits, reviews using GitHub API
             issues=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/issues?state=all")
