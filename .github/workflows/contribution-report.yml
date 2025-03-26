@@ -27,7 +27,7 @@ jobs:
       - name: Generate contribution report
         run: |
           today=$(date +"%Y-%m-%d")
-          report_file="reports/report_${today}.md"
+          report_file="reports/contributions_${today}.md"
           
           # Initialize counters for each category
           issues_opened=4
