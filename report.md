@@ -431,17 +431,14 @@ _No new PRs_
 
 
 #### 💾 Commits Pushed:
-- [Commit 9adc313](https://github.com/rstudio/rstudio-pro/commits)
+_No new commits_
+
 
 #### 📝 PR Reviews:
 - [Reviewed PR #7706](https://github.com/rstudio/rstudio-pro/pull/7706#pullrequestreview-2711620335) (Reviewed: 2025-03-24T20:35:23Z)
 - [Reviewed PR #7706](https://github.com/rstudio/rstudio-pro/pull/7706#pullrequestreview-2711599873) (Reviewed: 2025-03-24T20:30:26Z)
 - [Reviewed PR #7706](https://github.com/rstudio/rstudio-pro/pull/7706#pullrequestreview-2707755928) (Reviewed: 2025-03-22T02:40:40Z)
 - [Reviewed PR #7706](https://github.com/rstudio/rstudio-pro/pull/7706#pullrequestreview-2707755928) (Reviewed: 2025-03-22T02:40:40Z)
-- [Reviewed PR #7689](https://github.com/rstudio/rstudio-pro/pull/7689#pullrequestreview-2703103351) (Reviewed: 2025-03-20T15:02:26Z)
-- [Reviewed PR #7614](https://github.com/rstudio/rstudio-pro/pull/7614#pullrequestreview-2702690140) (Reviewed: 2025-03-20T13:17:07Z)
-- [Reviewed PR #7683](https://github.com/rstudio/rstudio-pro/pull/7683#pullrequestreview-2699689895) (Reviewed: 2025-03-19T18:44:52Z)
-- [Reviewed PR #7610](https://github.com/rstudio/rstudio-pro/pull/7610#pullrequestreview-2695423068) (Reviewed: 2025-03-18T16:55:44Z)
 
 ---
 ### 📌 Repository: [rstudio/shiny-server-pro](https://github.com/rstudio/shiny-server-pro)
@@ -451,7 +448,8 @@ _No new issues_
 
 
 #### 🔀 Pull Requests Opened:
-- [Switching to quarto](https://github.com/rstudio/shiny-server-pro/pull/888) (Opened: 2025-03-20T03:38:37Z)
+_No new PRs_
+
 
 #### 💾 Commits Pushed:
 - [Commit 76b92fc](https://github.com/rstudio/shiny-server-pro/commits)
@@ -459,8 +457,6 @@ _No new issues_
 - [Commit fcbd90f](https://github.com/rstudio/shiny-server-pro/commits)
 - [Commit a09b509](https://github.com/rstudio/shiny-server-pro/commits)
 - [Commit 994dd50](https://github.com/rstudio/shiny-server-pro/commits)
-- [Commit b3bc334](https://github.com/rstudio/shiny-server-pro/commits)
-- [Commit 9d0b919](https://github.com/rstudio/shiny-server-pro/commits)
 
 #### 📝 PR Reviews:
 _No new reviews_
