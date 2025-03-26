@@ -50,12 +50,15 @@ jobs:
           # Append to the existing README (if it exists)
           cat temp_readme.md > $readme
           
+          # Add temp_readme.md to git
+          git add temp_readme.md
+          git add $readme
+
           # Commit and push the updated README
       - name: Commit and push updated README
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git add README.md
           git commit -m "Update README with new report links"
           git push origin main
         env:
