@@ -16,7 +16,7 @@ jobs:
           USERNAME="AshleyHenry15"
           TOKEN="${{ secrets.WEEKLY }}"
           DATE=$(date +"%Y-%m-%d")  # Current date in YYYY-MM-DD format
-          REPORT_FILE="contributions-$DATE.md"
+          REPORT_FILE="reports/contributions-$DATE.md"
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
 
           ORGS=("rstudio" "posit-dev")  # List of organizations
@@ -62,11 +62,11 @@ jobs:
 
           echo -e "$REPORT" > "$REPORT_FILE"
 
-      - name: Commit and push the report to GitHub
+      - name: Commit and push the report to GitHub Pages (reports folder)
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git remote set-url origin https://x-access-token:${{ secrets.WEEKLY }}@github.com/AshleyHenry15/github-work.git
-          git add contributions-*.md
+          git add reports/contributions-*.md
           git commit -m "Update contribution report for $DATE"
           git push origin main
