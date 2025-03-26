@@ -37,16 +37,16 @@ jobs:
           for org in "${orgs[@]}"; do
             echo "## Organization: $org" >> $report_file
             # Fetch the repositories for the organization
-            repos=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY_TOKEN }}" \
+            repos=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
               "https://api.github.com/orgs/$org/repos?type=all&per_page=100" | jq -r '.[].full_name')
             for repo in $repos; do
               echo "### Repository: $repo" >> $report_file
               # Fetch contributions for the repo (PRs, issues, reviews)
-              pr_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY_TOKEN }}" \
+              pr_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
                 "https://api.github.com/repos/$repo/pulls?state=all" | jq '. | length')
-              issue_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY_TOKEN }}" \
+              issue_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
                 "https://api.github.com/repos/$repo/issues?state=all" | jq '. | length')
-              review_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY_TOKEN }}" \
+              review_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
                 "https://api.github.com/repos/$repo/pulls/reviews?state=all" | jq '. | length')
 
               echo "  - Pull Requests: $pr_count" >> $report_file
@@ -64,4 +64,4 @@ jobs:
           git commit -m "Update contribution report for ${today}"
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.WEEKLY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WEEKLY }}
