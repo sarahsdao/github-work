@@ -52,10 +52,6 @@ jobs:
               PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
               REPORT+="#### 🔀 Pull Requests Opened:\n${PRS:-_No new PRs_\n}\n\n"
 
-              # Commits Pushed
-              COMMITS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PushEvent" and .repo.name==$REPO and .created_at > $DATE)] | map("- [Commit \(.payload.commits | map(.sha[0:7]) | join(", "))](https://github.com/\(.repo.name)/commits)") | join("\n")')
-              REPORT+="#### 💾 Commits Pushed:\n${COMMITS:-_No new commits_\n}\n\n"
-
               # PR Reviews
               REVIEWS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | map("- [Reviewed PR #\(.payload.pull_request.number)](\(.payload.review.html_url))") | join("\n")')
               REPORT+="#### 📝 PR Reviews:\n${REVIEWS:-_No new reviews_\n}\n\n"
