@@ -23,47 +23,70 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests jq
+          pip install requests
 
       # Generate the report
       - name: Generate contribution report
         run: |
-          # Set up variables
+          # Fetch the list of repositories for all organizations (rstudio, posit-dev)
+          orgs=("rstudio" "posit-dev")
           today=$(date +"%Y-%m-%d")
           report_file="reports/contribution_report_${today}.md"
-          mkdir -p reports  # Ensure reports directory exists
 
-          echo "# 📝 GitHub Contributions Report - ${today}" > $report_file
+          echo "# GitHub Contributions Report - ${today}" > $report_file
           echo "" >> $report_file
           echo "## 📊 Weekly Summary" >> $report_file
           echo "| Repository | 🐞 Issues Opened | ✍️ PRs Opened | 👀 PR Reviews |" >> $report_file
           echo "|------------|-----------------|-------------|-----------|" >> $report_file
-
-          # GitHub Organizations
-          orgs=("rstudio" "posit-dev")
-
+          
           for org in "${orgs[@]}"; do
-            echo "## Organization: $org" >> $report_file
-            # Fetch the repositories for the organization
-            repos=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY_TOKEN }}" \
+            repos=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
               "https://api.github.com/orgs/$org/repos?type=all&per_page=100" | jq -r '.[].full_name')
+            
             for repo in $repos; do
-              echo "### Repository: $repo" >> $report_file
-              # Fetch contributions for the repo (PRs, issues, reviews)
-              pr_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-                "https://api.github.com/repos/$repo/pulls?state=all" | jq '. | length')
               issue_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-                "https://api.github.com/repos/$repo/issues?state=all" | jq '. | length')
+                "https://api.github.com/repos/$repo/issues?state=open" | jq '. | length')
+              pr_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
+                "https://api.github.com/repos/$repo/pulls?state=open" | jq '. | length')
               review_count=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
                 "https://api.github.com/repos/$repo/pulls/reviews?state=all" | jq '. | length')
 
-              echo "  - Pull Requests: $pr_count" >> $report_file
-              echo "  - Issues: $issue_count" >> $report_file
-              echo "  - Reviews: $review_count" >> $report_file
+              # Add to summary table
+              echo "| [${repo}](https://github.com/${repo}) | ${issue_count} | ${pr_count} | ${review_count} |" >> $report_file
+              
+              # Add detailed breakdown
+              echo "### 📌 Repository: [${repo}](https://github.com/${repo})" >> $report_file
+              echo "" >> $report_file
+              echo "#### 🐞 Issues Opened (${issue_count}):" >> $report_file
+              if [ "$issue_count" -gt 0 ]; then
+                curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
+                  "https://api.github.com/repos/$repo/issues?state=open" | jq -r '.[] | "- [" + .title + "](" + .html_url + ")"' >> $report_file
+              else
+                echo "_No new issues_" >> $report_file
+              fi
+              echo "" >> $report_file
+
+              echo "#### ✍️ Pull Requests Opened (${pr_count}):" >> $report_file
+              if [ "$pr_count" -gt 0 ]; then
+                curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
+                  "https://api.github.com/repos/$repo/pulls?state=open" | jq -r '.[] | "- [" + .title + "](" + .html_url + ")"' >> $report_file
+              else
+                echo "_No new PRs_" >> $report_file
+              fi
+              echo "" >> $report_file
+
+              echo "#### 👀 PR Reviews (${review_count}):" >> $report_file
+              if [ "$review_count" -gt 0 ]; then
+                curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
+                  "https://api.github.com/repos/$repo/pulls?state=open" | jq -r '.[] | "- [Reviewed PR](" + .html_url + ")"' >> $report_file
+              else
+                echo "_No new reviews_" >> $report_file
+              fi
+              echo "---" >> $report_file
             done
           done
 
-      # Commit and push the report
+      # Commit the report and push it to the repository
       - name: Commit and push report
         run: |
           git config --global user.name "GitHub Action"
