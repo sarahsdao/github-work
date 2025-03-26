@@ -1,72 +1,49 @@
-name: Contribution Report
-
+name: Generate GitHub Contribution Report
 on:
   schedule:
-    - cron: '0 15 * * 5'  # Every Friday at 3:00 PM EST
-  workflow_dispatch:  # Manual trigger
+    - cron: "0 0 * * 1"  # Runs every Monday
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   generate-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      - name: Install required Python packages
+      - name: Fetch GitHub Contributions (Last 7 Days)
         run: |
-          python -m pip install --upgrade pip
-          pip install requests jq
-      - name: Fetch repositories from multiple organizations
-        id: fetch_repos
-        run: |
-          # List of organizations
-          orgs=("rstudio" "posit-dev")  # Updated with your organizations
-          token="${{ secrets.WEEKLY }}"  # Using your new token
-          repos=""
-          # Loop through each organization and fetch repositories
-          for org in "${orgs[@]}"; do
-            echo "Fetching repositories for organization: $org"
-            response=$(curl -H "Authorization: token $token" \
-                             "https://api.github.com/orgs/$org/repos?per_page=100")
-            
-            # Debugging: Print raw response
-            echo "Response from GitHub API:"
-            echo "$response"
-            # Check if response is an array and contain 'full_name'
-            # If the response is not an array, we should inspect and adjust accordingly
-            org_repos=$(echo "$response" | jq -r 'if type == "array" then .[] | .full_name else "No valid repos" end')
-            # Append repos to the list
-            repos+="$org_repos\n"
+          USERNAME="AshleyHenry15"
+          TOKEN="${{ secrets.WEEKLY }}"
+          REPORT="## 📝 Weekly Contribution Report\n\n"
+          
+          ORGS=("rstudio" "posit-dev")  # List of organizations
+          for ORG in "${ORGS[@]}"; do
+            REPORT+="## 🔹 Organization: [$ORG](https://github.com/$ORG)\n\n"
+            # Get all repos for the org
+            REPOS=$(curl -s -H "Authorization: token $TOKEN" \
+              "https://api.github.com/orgs/$ORG/repos?per_page=100" | jq -r '.[].full_name')
+            for REPO in $REPOS; do
+              REPORT+="### 📌 Repository: [$REPO](https://github.com/$REPO)\n\n"
+              # Fetch User Events (Mirrors GitHub's Contribution Activity)
+              EVENTS=$(curl -s -H "Authorization: token $TOKEN" \
+                "https://api.github.com/users/$USERNAME/events?per_page=100")
+              # Issues Opened
+              ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url)) (Opened: \(.created_at))") | join("\n")')
+              REPORT+="#### 🐞 Issues Opened:\n${ISSUES:-_No new issues_\n}\n\n"
+              # PRs Opened
+              PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url)) (Opened: \(.created_at))") | join("\n")')
+              REPORT+="#### 🔀 Pull Requests Opened:\n${PRS:-_No new PRs_\n}\n\n"
+              # Commits Pushed
+              COMMITS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" '[.[] | select(.type=="PushEvent" and .repo.name==$REPO)] | map("- [Commit \(.payload.commits | map(.sha[0:7]) | join(", "))](https://github.com/\(.repo.name)/commits)") | join("\n")')
+              REPORT+="#### 💾 Commits Pushed:\n${COMMITS:-_No new commits_\n}\n\n"
+              # PR Reviews
+              REVIEWS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO)] | map("- [Reviewed PR #\(.payload.pull_request.number)](\(.payload.review.html_url)) (Reviewed: \(.created_at))") | join("\n")')
+              REPORT+="#### 📝 PR Reviews:\n${REVIEWS:-_No new reviews_\n}\n\n"
+              REPORT+="---\n"
+            done
           done
-          echo "Repositories: $repos"
-          echo "::set-output name=repos::$repos"
-      - name: Fetch contributions from all repositories
-        id: fetch_contributions
-        run: |
-          repos="${{ steps.fetch_repos.outputs.repos }}"
-          token="${{ secrets.WEEKLY }}"  # Using your new token
-          # Placeholder for the report
-          report="## Weekly Contribution Report\n\n"
-          # Loop through each repo to gather contributions
-          for repo in $repos; do
-            report+="### Repository: $repo\n\n"
-            # Fetch issues, PRs, commits, reviews using GitHub API
-            issues=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/issues?state=all")
-            prs=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/pulls?state=all")
-            commits=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/commits?since=2025-03-01T00:00:00Z")
-            reviews=$(curl -H "Authorization: token $token" "https://api.github.com/repos/$repo/pulls/comments")
-            # Append contributions to the report
-            report+="**Issues:**\n$issues\n\n"
-            report+="**Pull Requests:**\n$prs\n\n"
-            report+="**Commits:**\n$commits\n\n"
-            report+="**Reviews:**\n$reviews\n\n"
-          done
-          echo "$report" > report.md
+          echo -e "$REPORT" > report.md
       - name: Commit and push the report to GitHub
         run: |
           git config --global user.name 'GitHub Action'
@@ -74,4 +51,4 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.WEEKLY }}@github.com/AshleyHenry15/github-work.git
           git add report.md
           git commit -m "Update contribution report"
-          git push
+          git push origin main
