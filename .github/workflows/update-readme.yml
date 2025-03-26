@@ -43,8 +43,9 @@ jobs:
           # Loop through reports in the reports directory and add them to the README
           for report in $(ls $report_dir); do
             report_date=$(echo $report | sed 's/contribution_report_//g' | sed 's/.md//g')
-            report_url="https://ashleyhenry15.github.io/github-work/reports/$report"
-            echo "- [$report_date]( $report_url )" >> temp_readme.md
+            # Remove the .md extension from the URL to render it correctly
+            report_url="https://ashleyhenry15.github.io/github-work/reports/${report%.*}"
+            echo "- [$report_date]($report_url)" >> temp_readme.md
           done
 
           # Append to the existing README (if it exists)
