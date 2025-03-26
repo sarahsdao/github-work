@@ -7,7 +7,7 @@ on:
       - completed
   schedule:
     - cron: '0 16 * * 5'  # Run every Friday at 4 PM EST
-
+  workflow_dispatch:  # Allow the workflow to be manually triggered
 jobs:
   generate_report:
     runs-on: ubuntu-latest
