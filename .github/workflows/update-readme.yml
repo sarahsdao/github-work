@@ -1,0 +1,62 @@
+name: Update README with Report Links
+
+on:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows: ["Generate Contribution Report"]
+    types:
+      - completed
+  schedule:
+    - cron: '0 16 * * 5'  # Run every Friday at 4 PM EST (after the report is generated)
+
+jobs:
+  update_readme:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Set up Python environment (if needed for markdown processing)
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      # Install dependencies (in case you want to process Markdown files)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+
+      # Update README with links to the reports
+      - name: Update README with report links
+        run: |
+          # Initialize the reports list
+          today=$(date +"%Y-%m-%d")
+          report_dir="reports"
+          readme="README.md"
+          echo "## GitHub Contribution Reports" > temp_readme.md
+          echo "Here are the reports for my GitHub contributions:" >> temp_readme.md
+          
+          # Loop through reports in the reports directory and add them to the README
+          for report in $(ls $report_dir); do
+            report_date=$(echo $report | sed 's/contribution_report_//g' | sed 's/.md//g')
+            report_url="https://ashleyhenry15.github.io/github-work/reports/$report"
+            echo "- [$report_date]( $report_url )" >> temp_readme.md
+          done
+
+          # Append to the existing README (if it exists)
+          cat temp_readme.md > $readme
+          
+          # Commit and push the updated README
+      - name: Commit and push updated README
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add README.md
+          git commit -m "Update README with new report links"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.WEEKLY_TOKEN }}
