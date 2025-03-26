@@ -29,12 +29,27 @@ jobs:
           today=$(date +"%Y-%m-%d")
           report_file="reports/contribution_report_${today}.md"
           
-          # Generate your contribution report here and write it to the file
+          # Initialize counters for each category
+          issues_opened=4
+          prs_opened=3
+          reviews_requested=2
+
+          # Generate the report content with totals and emojis
           echo "# Contribution Report for ${today}" > $report_file
-          echo "Here are the contributions for today:" >> $report_file
-          
-          # Additional content for your report...
-          
+          echo "## Summary of Contributions" >> $report_file
+          echo "### Issues Opened (${issues_opened}):" >> $report_file
+          echo "  - Example Issue 1" >> $report_file
+          echo "  - Example Issue 2" >> $report_file
+          echo "  - Example Issue 3" >> $report_file
+          echo "  - Example Issue 4" >> $report_file
+          echo "### 📄 Pull Requests Opened (${prs_opened}):" >> $report_file
+          echo "  - Example PR 1" >> $report_file
+          echo "  - Example PR 2" >> $report_file
+          echo "  - Example PR 3" >> $report_file
+          echo "### 👀 PR Reviews Requested (${reviews_requested}):" >> $report_file
+          echo "  - Example Review 1" >> $report_file
+          echo "  - Example Review 2" >> $report_file
+
           # Commit the report to the repository
           git add $report_file
           git config --global user.name "GitHub Action"
