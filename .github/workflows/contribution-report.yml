@@ -1,18 +1,16 @@
 name: Generate Contribution Report
 
 on:
-  workflow_run:
-    workflows: ["Some Other Workflow"]
-    types:
-      - completed
   schedule:
-    - cron: '0 16 * * 5'  # Run every Friday at 4 PM EST
-  workflow_dispatch:  # Allow the workflow to be manually triggered
+    - cron: '0 15 * * 5'  # Every Friday at 3:00 PM EST
+  workflow_dispatch: # Allows manual trigger
+
 jobs:
-  generate_report:
+  generate-report:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout the repository
         uses: actions/checkout@v2
 
       - name: Set up Python
@@ -20,41 +18,70 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Create reports directory
+      - name: Install dependencies
         run: |
-          mkdir -p reports  # Creates the reports directory if it doesn't exist
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Generate contribution report
+      - name: Generate Contribution Report
+        id: generate_report
         run: |
-          today=$(date +"%Y-%m-%d")
-          report_file="reports/contributions_${today}.md"
+          #!/bin/bash
+
+          # Set up variables
+          today=$(date +'%Y-%m-%d')
+          report_dir="reports"
+          report_file="contributions-${today}.md"
+
+          # Create reports directory if it doesn't exist
+          mkdir -p $report_dir
+
+          # Fetch list of repositories for the organizations
+          repos=$(gh repo list rstudio --limit 100 --json name -q '.[].name')
+          repos+=$(gh repo list posit-dev --limit 100 --json name -q '.[].name')
+
+          # Start the report
+          echo "## 📝 Weekly Contribution Report ($today)" > $report_dir/$report_file
           
-          # Initialize counters for each category
-          issues_opened=4
-          prs_opened=3
-          reviews_requested=2
+          # Loop through each repo and get contributions data
+          for repo in $repos; do
+            echo "### 📌 Repository: [${repo}](https://github.com/rstudio/${repo})" >> $report_dir/$report_file
+            echo "" >> $report_dir/$report_file
 
-          # Generate the report content with totals and emojis
-          echo "# Contribution Report for ${today}" > $report_file
-          echo "## Summary of Contributions" >> $report_file
-          echo "### Issues Opened (${issues_opened}):" >> $report_file
-          echo "  - Example Issue 1" >> $report_file
-          echo "  - Example Issue 2" >> $report_file
-          echo "  - Example Issue 3" >> $report_file
-          echo "  - Example Issue 4" >> $report_file
-          echo "### 📄 Pull Requests Opened (${prs_opened}):" >> $report_file
-          echo "  - Example PR 1" >> $report_file
-          echo "  - Example PR 2" >> $report_file
-          echo "  - Example PR 3" >> $report_file
-          echo "### 👀 PR Reviews Requested (${reviews_requested}):" >> $report_file
-          echo "  - Example Review 1" >> $report_file
-          echo "  - Example Review 2" >> $report_file
+            # Fetch the contributions data for the repo
+            issues_opened=$(gh issue list --repo rstudio/$repo --state open --json number --jq '. | length')
+            prs_opened=$(gh pr list --repo rstudio/$repo --state open --json number --jq '. | length')
+            pr_reviews=$(gh pr review --repo rstudio/$repo --json state --jq '. | length')
+
+            # Output the formatted information
+            echo "#### 🐞 Issues Opened ($issues_opened):" >> $report_dir/$report_file
+            if [ $issues_opened -gt 0 ]; then
+              gh issue list --repo rstudio/$repo --state open --json title,url --jq '.[] | "- [" + .title + "](" + .url + ")"' >> $report_dir/$report_file
+            else
+              echo "_No new issues_" >> $report_dir/$report_file
+            fi
+            echo "" >> $report_dir/$report_file
+
+            echo "#### 🔀 Pull Requests Opened ($prs_opened):" >> $report_dir/$report_file
+            if [ $prs_opened -gt 0 ]; then
+              gh pr list --repo rstudio/$repo --state open --json title,url --jq '.[] | "- [" + .title + "](" + .url + ")"' >> $report_dir/$report_file
+            else
+              echo "_No new PRs_" >> $report_dir/$report_file
+            fi
+            echo "" >> $report_dir/$report_file
+
+            echo "#### 📝 PR Reviews ($pr_reviews):" >> $report_dir/$report_file
+            if [ $pr_reviews -gt 0 ]; then
+              gh pr review --repo rstudio/$repo --json url --jq '.[] | "- [Reviewed PR](" + .url + ")"' >> $report_dir/$report_file
+            else
+              echo "_No new reviews_" >> $report_dir/$report_file
+            fi
+            echo "---" >> $report_dir/$report_file
+          done
 
           # Commit the report to the repository
-          git add $report_file
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git commit -m "Generate contribution report for ${today}"
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.WEEKLY_TOKEN }}
+          git add $report_dir/$report_file
+          git commit -m "Update contribution report for $today"
+          git push
