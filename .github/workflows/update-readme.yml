@@ -63,4 +63,4 @@ jobs:
           git commit -m "Update README with new report links"
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.WEEKLY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WEEKLY }}
