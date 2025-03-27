@@ -63,7 +63,7 @@ jobs:
             done
           done
           
-          # Write the report to the file (will overwrite if file exists)
+          # Force overwrite of the report file
           echo -e "$REPORT" > "$REPORT_FILE"
           
       - name: Update README with report link
@@ -74,18 +74,18 @@ jobs:
           # The link to the new report
           REPORT_LINK="[Contribution Report for $DATE](./$REPORT_FILE)"
           
-          # Add the link to the README (you can modify the section to add the link wherever you'd like)
-          sed -i "s|<!-- ADD_LATEST_REPORT_LINK -->|<!-- ADD_LATEST_REPORT_LINK -->\n$REPORT_LINK|" README.md
+          # Ensure the placeholder exists in the README
+          if grep -q "<!-- ADD_LATEST_REPORT_LINK -->" README.md; then
+            # Add the link to the README after the placeholder
+            sed -i "s|<!-- ADD_LATEST_REPORT_LINK -->|<!-- ADD_LATEST_REPORT_LINK -->\n$REPORT_LINK|" README.md
+          else
+            echo "Placeholder <!-- ADD_LATEST_REPORT_LINK --> not found in README.md"
+          fi
+
+          # Display the README content for debugging purposes
+          cat README.md
           
       - name: Commit and push the report and README update to GitHub
         run: |
           git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.WEEKLYCLASSIC }}@github.com/AshleyHenry15/github-work.git
-          
-          # Ensure it adds reports in the 'reports' directory and README file
-          git add reports/contributions-*.md README.md
-          
-          # Force commit and push even if there are no changes
-          git commit -m "Update contribution report for $DATE and README" || echo "No changes to commit"
-          git push origin main
+          git config

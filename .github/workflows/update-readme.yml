@@ -5,6 +5,7 @@ on:
     workflows: ["GitHub Contributions Report"]
     types:
       - completed
+  workflow_dispatch:  # Allows for manual triggering
 
 jobs:
   update-readme:
@@ -29,7 +30,7 @@ jobs:
             exit 1  # Exit if no report is found, but still run the update process
           fi
           
-          # Check if the link to the report already exists in README.md, then remove it
+          # Remove any existing report links (to prevent duplication)
           sed -i '/## Latest Contribution Report/d' README.md
           sed -i '/You can find the latest contribution report/d' README.md
           
