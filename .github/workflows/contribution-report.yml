@@ -28,7 +28,6 @@ jobs:
           else
             echo "Creating new report file: $REPORT_FILE"
           fi
-
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
           DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
@@ -81,7 +80,6 @@ jobs:
           else
             echo "Placeholder <!-- ADD_LATEST_REPORT_LINK --> not found in README.md"
           fi
-
           # Display the README content for debugging purposes
           cat README.md
           
