@@ -1,4 +1,5 @@
 name: Generate GitHub Contribution Report
+
 on:
   schedule:
     - cron: "0 19 * * 5"  # Runs every Friday at 3 PM EST
@@ -15,11 +16,11 @@ jobs:
         run: |
           USERNAME="AshleyHenry15"
           TOKEN="${{ secrets.WEEKLYCLASSIC }}"
-          DATE=$(date +"%Y-%m-%d")  # Current date in YYYY-MM-DD format
+          DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  # Current date in EST
           REPORT_FILE="contributions-$DATE.md"
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
-          DATE_LIMIT=$(date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
+          DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
           for ORG in "${ORGS[@]}"; do
             # Fetch events (contributions) for the past week
             EVENTS=$(curl -s -H "Authorization: token $TOKEN" \
@@ -49,6 +50,7 @@ jobs:
             done
           done
           echo -e "$REPORT" > "$REPORT_FILE"
+
       - name: Commit and push the report to GitHub
         run: |
           git config --global user.name 'GitHub Action'
