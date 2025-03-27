@@ -17,7 +17,7 @@ jobs:
           USERNAME="AshleyHenry15"
           TOKEN="${{ secrets.WEEKLYCLASSIC }}"
           DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  # Current date in EST
-          REPORT_FILE="contributions-$DATE.md"
+          REPORT_FILE="reports/contributions-$DATE.md"  # Save report in the 'reports' directory
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
           DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
@@ -56,6 +56,6 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git remote set-url origin https://x-access-token:${{ secrets.WEEKLYCLASSIC }}@github.com/AshleyHenry15/github-work.git
-          git add contributions-*.md
+          git add reports/contributions-*.md  # Ensure it adds reports in the 'reports' directory
           git commit -m "Update contribution report for $DATE"
           git push origin main
