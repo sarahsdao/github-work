@@ -14,7 +14,6 @@
 - [Updating Previous Versions to Supported Versions](https://github.com/rstudio/docs.rstudio.com/pull/2090)
 - [Update networking.md](https://github.com/rstudio/docs.rstudio.com/pull/2088)
 - [Reduction of content in attempt to align more with a "how to guide"](https://github.com/rstudio/docs.rstudio.com/pull/2085)
-- [Supported versions](https://github.com/rstudio/docs.rstudio.com/pull/2083)
 
 #### 📝 PR Reviews:
 - [Reviewed PR #2076](https://github.com/rstudio/docs.rstudio.com/pull/2076#pullrequestreview-2710599329)
