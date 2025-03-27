@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Fetch repositories for rstudio
         run: |
-          curl -H "Authorization: token ${{ secrets.WEEKLY }}" "https://api.github.com/orgs/rstudio/repos?type=all&per_page=100"
+          curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/orgs/rstudio/repos?type=all&per_page=100"
