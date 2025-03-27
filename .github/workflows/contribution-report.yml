@@ -1,15 +1,64 @@
 name: Generate Contribution Report
 
 on:
-  schedule:
-    # Run the workflow every Monday at 6:00 AM UTC
-    - cron: '0 6 * * 1'
-  workflow_dispatch: # Allows manual triggering of the workflow
+    workflow_dispatch:  # Manual trigger
+    schedule:
+      - cron: '0 15 * * 5'  # Every Friday at 3 PM EST (UTC-5)
 
 jobs:
-  fetch_repos:
+  report:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch repositories for rstudio
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Fetch the list of repositories for all organizations (rstudio, posit-dev)
         run: |
-          curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/orgs/rstudio/repos?type=all&per_page=100"
+          # Fetch the list of repositories for all organizations (rstudio, posit-dev)
+          repos=$(curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/orgs/rstudio/repos?type=all&per_page=100" | jq -r '.[].full_name')
+          repos+=$(curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/orgs/posit-dev/repos?type=all&per_page=100" | jq -r '.[].full_name')
+
+          for repo in $repos; do
+            echo "Processing repository: $repo"
+
+            # Collect open issues
+            issues=$(curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/repos/$repo/issues?state=open")
+            echo "$issues" > "$repo-issues.json"
+
+            # Collect open pull requests
+            prs=$(curl -H "Authorization: token ${{ secrets.WEEKLYCLASSIC }}" "https://api.github.com/repos/$repo/pulls?state=open")
+            echo "$prs" > "$repo-prs.json"
+          done
+
+      - name: Generate Contribution Report
+        run: |
+          # Generate the report in Markdown format
+          echo "# Weekly Contribution Report" > report.md
+          echo "🔹 Organization: rstudio" >> report.md
+          
+          # Iterate through the repositories and collect the data
+          for repo in $(cat repos.txt); do
+            echo "📌 Repository: $repo" >> report.md
+
+            # Get Issues
+            issues_file="$repo-issues.json"
+            if [ -f "$issues_file" ]; then
+              echo "🐞 Issues Opened:" >> report.md
+              jq -r '.[].title' "$issues_file" >> report.md
+            fi
+
+            # Get Pull Requests
+            prs_file="$repo-prs.json"
+            if [ -f "$prs_file" ]; then
+              echo "🔀 Pull Requests Opened:" >> report.md
+              jq -r '.[].title' "$prs_file" >> report.md
+            fi
+          done
+
+      - name: Commit Report
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add report.md
+          git commit -m "Update Weekly Contribution Report"
+          git push
