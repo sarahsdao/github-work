@@ -5,64 +5,10 @@ on:
     # Run the workflow every Monday at 6:00 AM UTC
     - cron: '0 6 * * 1'
   workflow_dispatch: # Allows manual triggering of the workflow
-
 jobs:
   fetch_repos:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Fetch repositories for all organizations (rstudio, posit-dev)
+      - name: Fetch repositories for rstudio
         run: |
-          ORGS=("rstudio" "posit-dev")
-          
-          for ORG in "${ORGS[@]}"; do
-            echo "Fetching repositories for organization: $ORG"
-            
-            # Fetch the list of repositories for the organization
-            repos=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-              "https://api.github.com/orgs/$ORG/repos?type=all&per_page=100" | jq -r '.[].full_name')
-
-            # Loop through the repositories and collect contributions
-            for repo in $repos; do
-              echo "Processing repository: $repo"
-              
-              # Fetch issues opened
-              issues=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-                "https://api.github.com/repos/$repo/issues?state=open&per_page=100" | jq -r '.[].title')
-
-              # Fetch pull requests opened
-              prs=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-                "https://api.github.com/repos/$repo/pulls?state=open&per_page=100" | jq -r '.[].title')
-
-              # Fetch pull requests reviewed
-              reviews=$(curl -s -H "Authorization: token ${{ secrets.WEEKLY }}" \
-                "https://api.github.com/repos/$repo/pulls?state=all&per_page=100" | jq -r '.[].reviews[]? | select(.user.login == "AshleyHenry15") | .body')
-
-              # Output the collected data to a Markdown file
-              echo "## Repository: $repo" >> report.md
-              echo "### Issues Opened" >> report.md
-              for issue in $issues; do
-                echo "- $issue" >> report.md
-              done
-              echo "### Pull Requests Opened" >> report.md
-              for pr in $prs; do
-                echo "- $pr" >> report.md
-              done
-              echo "### Pull Requests Reviewed" >> report.md
-              for review in $reviews; do
-                echo "- $review" >> report.md
-              done
-              echo "-----" >> report.md
-            done
-          done
-
-      - name: Commit and push report
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add report.md
-          git commit -m "Update weekly GitHub contribution report"
-          git push origin main
-
+          curl -H "Authorization: token ${{ secrets.WEEKLY }}" "https://api.github.com/orgs/rstudio/repos?type=all&per_page=100"
