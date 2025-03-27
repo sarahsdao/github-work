@@ -1,5 +1,4 @@
-## Ashley's GitHub Contribution Reports
+## Contribution Reports
+Here is a list of all contribution reports:
 
-Here are the weekly reports for my GitHub contributions:
-## Latest Contribution Report
-You can find the latest contribution report [here](./reports/contributions-2025-03-26.md).
+- [2025-03-26](./reports/contributions-2025-03-26.md)
