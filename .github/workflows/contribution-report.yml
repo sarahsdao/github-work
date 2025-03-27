@@ -49,7 +49,22 @@ jobs:
               if [[ "$REPO" != "$ORG/"* ]]; then
                 continue
               fi
+              
+              # Count summary statistics
+              ISSUE_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | length')
+              CLOSED_ISSUE_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="closed" and .repo.name==$REPO and .created_at > $DATE)] | length')
+              PR_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | length')
+              MERGED_PR_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="closed" and .payload.pull_request.merged == true and .repo.name==$REPO and .created_at > $DATE)] | length')
+              REVIEW_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | length')
+
+              # Repository summary section
               REPORT+="### 📌 Repository: [$REPO](https://github.com/$REPO)\n\n"
+              REPORT+="**Summary:**\n"
+              REPORT+="- 🐞 Issues Opened: $ISSUE_COUNT\n"
+              REPORT+="- 🚪 Issues Closed: $CLOSED_ISSUE_COUNT\n"
+              REPORT+="- 🔀 PRs Opened: $PR_COUNT\n"
+              REPORT+="- 🔒 PRs Merged: $MERGED_PR_COUNT\n"
+              REPORT+="- 📝 PR Reviews: $REVIEW_COUNT\n\n"
 
               # Issues Opened
               ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
@@ -76,34 +91,3 @@ jobs:
           
           # Force overwrite of the report file
           echo -e "$REPORT" > "$REPORT_FILE"
-          
-      - name: Update README with report link
-        run: |
-          DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  # Current date in EST
-          REPORT_FILE="reports/contributions-$DATE.md"
-          
-          # The link to the new report
-          REPORT_LINK="[Contribution Report for $DATE](./$REPORT_FILE)"
-          
-          # Ensure the placeholder exists in the README
-          if grep -q "<!-- ADD_LATEST_REPORT_LINK -->" README.md; then
-            # Add the link to the README after the placeholder
-            sed -i "s|<!-- ADD_LATEST_REPORT_LINK -->|<!-- ADD_LATEST_REPORT_LINK -->\n$REPORT_LINK|" README.md
-          else
-            echo "Placeholder <!-- ADD_LATEST_REPORT_LINK --> not found in README.md"
-          fi
-          # Display the README content for debugging purposes
-          cat README.md
-          
-      - name: Commit and push the report and README update to GitHub
-        run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.WEEKLYCLASSIC }}@github.com/AshleyHenry15/github-work.git
-          
-          # Ensure it adds reports in the 'reports' directory and README file
-          git add reports/contributions-*.md README.md
-          
-          # Force commit and push even if there are no changes
-          git commit -m "Update contribution report for $DATE and README" || echo "No changes to commit"
-          git push origin main
