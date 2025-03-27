@@ -28,6 +28,7 @@ jobs:
           else
             echo "Creating new report file: $REPORT_FILE"
           fi
+          
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
           DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
@@ -49,12 +50,23 @@ jobs:
                 continue
               fi
               REPORT+="### 📌 Repository: [$REPO](https://github.com/$REPO)\n\n"
+
               # Issues Opened
               ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
               REPORT+="#### 🐞 Issues Opened:\n${ISSUES:-_No new issues_\n}\n\n"
+
+              # Issues Closed
+              CLOSED_ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="closed" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
+              REPORT+="#### 🚪 Issues Closed:\n${CLOSED_ISSUES:-_No closed issues_\n}\n\n"
+
               # PRs Opened
               PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
               REPORT+="#### 🔀 Pull Requests Opened:\n${PRS:-_No new PRs_\n}\n\n"
+
+              # Merged PRs
+              MERGED_PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="closed" and .payload.pull_request.merged == true and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
+              REPORT+="#### 🔒 Merged Pull Requests:\n${MERGED_PRS:-_No merged PRs_\n}\n\n"
+
               # PR Reviews
               REVIEWS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | map("- [Reviewed PR #\(.payload.pull_request.number)](\(.payload.review.html_url))") | join("\n")')
               REPORT+="#### 📝 PR Reviews:\n${REVIEWS:-_No new reviews_\n}\n\n"
