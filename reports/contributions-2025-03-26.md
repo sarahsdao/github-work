@@ -9,13 +9,29 @@
 - [Supported Versions - RStudio, remove Desktop supported mac versions link and add that to desktop admin guide](https://github.com/rstudio/docs.rstudio.com/issues/2087)
 - [Update or add new GitHub action for new Supported Versions landing page](https://github.com/rstudio/docs.rstudio.com/issues/2086)
 
+#### 🚪 Issues Closed:
+- [Move contents of posit.co/support to the page](https://github.com/rstudio/docs.rstudio.com/issues/1800)
+- [Rename "previous versions" pages to "supported versions](https://github.com/rstudio/docs.rstudio.com/issues/2089)
+- [Add TLS port 22 to Networking page](https://github.com/rstudio/docs.rstudio.com/issues/2062)
+- [Supported Versions - RStudio, remove Desktop supported mac versions link and add that to desktop admin guide](https://github.com/rstudio/docs.rstudio.com/issues/2087)
+- [Supported Versions page - Update RStudio Workbench to Posit Workbench](https://github.com/rstudio/docs.rstudio.com/issues/2080)
+- [SSL test for trusted root cert](https://github.com/rstudio/docs.rstudio.com/issues/2058)
+- [How to guide - SSL - Step Formatting](https://github.com/rstudio/docs.rstudio.com/issues/2063)
+
 #### 🔀 Pull Requests Opened:
 - [trying to add html paths to see if this works](https://github.com/rstudio/docs.rstudio.com/pull/2091)
 - [Updating Previous Versions to Supported Versions](https://github.com/rstudio/docs.rstudio.com/pull/2090)
 - [Update networking.md](https://github.com/rstudio/docs.rstudio.com/pull/2088)
 
+#### 🔒 Merged Pull Requests:
+- [Updating Previous Versions to Supported Versions](https://github.com/rstudio/docs.rstudio.com/pull/2090)
+- [Update networking.md](https://github.com/rstudio/docs.rstudio.com/pull/2088)
+- [Supported versions](https://github.com/rstudio/docs.rstudio.com/pull/2083)
+- [Bump extractions/setup-just from 2 to 3](https://github.com/rstudio/docs.rstudio.com/pull/2076)
+
 #### 📝 PR Reviews:
-- [Reviewed PR #2076](https://github.com/rstudio/docs.rstudio.com/pull/2076#pullrequestreview-2710599329)
+_No new reviews_
+
 
 ---
 ### 📌 Repository: [rstudio/package-manager](https://github.com/rstudio/package-manager)
@@ -24,8 +40,16 @@
 _No new issues_
 
 
+#### 🚪 Issues Closed:
+_No closed issues_
+
+
 #### 🔀 Pull Requests Opened:
 _No new PRs_
+
+
+#### 🔒 Merged Pull Requests:
+_No merged PRs_
 
 
 #### 📝 PR Reviews:
@@ -38,8 +62,16 @@ _No new PRs_
 _No new issues_
 
 
+#### 🚪 Issues Closed:
+_No closed issues_
+
+
 #### 🔀 Pull Requests Opened:
 _No new PRs_
+
+
+#### 🔒 Merged Pull Requests:
+_No merged PRs_
 
 
 #### 📝 PR Reviews:
@@ -55,8 +87,16 @@ _No new PRs_
 _No new issues_
 
 
+#### 🚪 Issues Closed:
+_No closed issues_
+
+
 #### 🔀 Pull Requests Opened:
 _No new PRs_
+
+
+#### 🔒 Merged Pull Requests:
+_No merged PRs_
 
 
 #### 📝 PR Reviews:
@@ -69,8 +109,16 @@ _No new PRs_
 #### 🐞 Issues Opened:
 - [Add more direction for Reusing content](https://github.com/posit-dev/product-doc-styleguide/issues/40)
 
+#### 🚪 Issues Closed:
+- [Formatting / Bolding](https://github.com/posit-dev/product-doc-styleguide/issues/34)
+- [Soften the enforcement around contractions](https://github.com/posit-dev/product-doc-styleguide/issues/23)
+
 #### 🔀 Pull Requests Opened:
 _No new PRs_
+
+
+#### 🔒 Merged Pull Requests:
+_No merged PRs_
 
 
 #### 📝 PR Reviews:
