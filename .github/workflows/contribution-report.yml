@@ -18,13 +18,19 @@ jobs:
           TOKEN="${{ secrets.WEEKLYCLASSIC }}"
           DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  # Current date in EST
           REPORT_FILE="reports/contributions-$DATE.md"  # Save report in the 'reports' directory
+          
+          # Create reports directory if it doesn't exist
+          mkdir -p reports
+          
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
           DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
+          
           for ORG in "${ORGS[@]}"; do
             # Fetch events (contributions) for the past week
             EVENTS=$(curl -s -H "Authorization: token $TOKEN" \
               "https://api.github.com/users/$USERNAME/events?per_page=100")
+            
             # Find unique repos where the user contributed
             ACTIVE_REPOS=$(echo "$EVENTS" | jq -r --arg DATE "$DATE_LIMIT" '[.[] | select(.created_at > $DATE) | .repo.name] | unique | .[]')
             if [[ -z "$ACTIVE_REPOS" ]]; then
@@ -50,7 +56,7 @@ jobs:
             done
           done
           echo -e "$REPORT" > "$REPORT_FILE"
-
+          
       - name: Commit and push the report to GitHub
         run: |
           git config --global user.name 'GitHub Action'
