@@ -1,66 +1,54 @@
-name: Update README with Report Links
+name: Update README with new report links
 
 on:
-  push:
-    branches:
-      - main
   workflow_run:
-    workflows: ["Generate Contribution Report"]
+    workflows: ["GitHub Contributions Report"]
     types:
       - completed
-  schedule:
-    - cron: '0 16 * * 5'  # Run every Friday at 4 PM EST (after the report is generated)
-  workflow_dispatch:  # Allows manual trigger
+
 jobs:
-  update_readme:
+  update-readme:
     runs-on: ubuntu-latest
+
     steps:
-      # Checkout repository
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      # Set up Python environment (if needed for markdown processing)
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      # Install dependencies (in case you want to process Markdown files)
-      - name: Install dependencies
+      - name: Find the latest report file
+        id: find_report
         run: |
-          python -m pip install --upgrade pip
+          # Find the most recent report file in the /reports directory
+          report_file=$(find reports -type f -name "*.md" -printf "%T+ %p\n" | sort -r | head -n 1 | cut -d' ' -f2)
+          echo "REPORT_FILE=$report_file" >> $GITHUB_ENV
 
-      # Update README with links to the reports
-      - name: Update README with report links
+      - name: Update README with the new report link
         run: |
-          # Initialize the reports list
-          today=$(date +"%Y-%m-%d")
-          report_dir="reports"
-          readme="README.md"
-          echo "## GitHub Contribution Reports" > temp_readme.md
-          echo "Here are the reports for my GitHub contributions:" >> temp_readme.md
+          # Always update the README with the new report link
+          if [ -z "$REPORT_FILE" ]; then
+            echo "No new report file found."
+            exit 1  # Exit if no report is found, but still run the update process
+          fi
           
-          # Loop through reports in the reports directory and add them to the README
-          for report in $(ls $report_dir); do
-            report_date=$(echo $report | sed 's/contribution_report_//g' | sed 's/.md//g')
-            # Remove the .md extension from the URL to render it correctly
-            report_url="https://ashleyhenry15.github.io/github-work/reports/${report%.*}"
-            echo "- [$report_date]($report_url)" >> temp_readme.md
-          done
-
-          # Append to the existing README (if it exists)
-          cat temp_readme.md > $readme
+          # Check if the link to the report already exists in README.md, then remove it
+          sed -i '/## Latest Contribution Report/d' README.md
+          sed -i '/You can find the latest contribution report/d' README.md
           
-          # Add temp_readme.md to git
-          git add temp_readme.md
-          git add $readme
+          # Append the new link to the README.md file
+          echo "## Latest Contribution Report" >> README.md
+          echo "You can find the latest contribution report [here](./$REPORT_FILE)." >> README.md
 
-          # Commit and push the updated README
-      - name: Commit and push updated README
+          # Stage the README.md file for commit
+          git add README.md
+
+      - name: Commit and push changes
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git commit -m "Update README with new report links"
+          
+          # Commit the changes to README.md
+          git commit -m "Update README with new report link" || echo "No changes to commit"
+          
+          # Push the changes back to the main branch
           git push origin main
         env:
-          GITHUB_TOKEN: ${{ secrets.WEEKLY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
