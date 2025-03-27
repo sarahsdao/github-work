@@ -2,7 +2,8 @@ name: Update README with new report links
 
 on:
   workflow_run:
-    workflows: ["GitHub Contributions Report"]
+    workflows: 
+      - "Generate GitHub Contributions Report"  # Make sure the name matches exactly
     types:
       - completed
   workflow_dispatch:  # Allows for manual triggering
@@ -15,28 +16,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Find the latest report file
-        id: find_report
+      - name: Find all report files in the reports directory
+        id: find_reports
         run: |
-          # Find the most recent report file in the /reports directory
-          report_file=$(find reports -type f -name "*.md" -printf "%T+ %p\n" | sort -r | head -n 1 | cut -d' ' -f2)
-          echo "REPORT_FILE=$report_file" >> $GITHUB_ENV
-
-      - name: Update README with the new report link
-        run: |
-          # Always update the README with the new report link
-          if [ -z "$REPORT_FILE" ]; then
-            echo "No new report file found."
-            exit 1  # Exit if no report is found, but still run the update process
+          # Get all the .md report files in the reports directory and sort by date
+          report_files=$(find reports -type f -name "*.md" | sort -r)
+          
+          if [ -z "$report_files" ]; then
+            echo "No report files found."
+            exit 1  # Exit if no reports are found
           fi
-          
-          # Remove any existing report links (to prevent duplication)
-          sed -i '/## Latest Contribution Report/d' README.md
-          sed -i '/You can find the latest contribution report/d' README.md
-          
-          # Append the new link to the README.md file
-          echo "## Latest Contribution Report" >> README.md
-          echo "You can find the latest contribution report [here](./$REPORT_FILE)." >> README.md
+
+          echo "REPORT_FILES=$report_files" >> $GITHUB_ENV
+
+      - name: Update README with the list of report links
+        run: |
+          # Always update the README with the list of report links
+          echo "## Contribution Reports" > README.md
+          echo "Here is a list of all contribution reports:" >> README.md
+          echo "" >> README.md
+
+          # Loop through each report file, extract the date from the filename, and append it to the README
+          for report in $REPORT_FILES; do
+            # Extract the date from the filename (assuming the format is contributions-YYYY-MM-DD.md)
+            report_date=$(basename "$report" | sed -E 's/contributions-([0-9]{4}-[0-9]{2}-[0-9]{2})\.md/\1/')
+            echo "- [$report_date](./$report)" >> README.md
+          done
 
           # Stage the README.md file for commit
           git add README.md
@@ -47,7 +52,7 @@ jobs:
           git config --global user.email "action@github.com"
           
           # Commit the changes to README.md
-          git commit -m "Update README with new report link" || echo "No changes to commit"
+          git commit -m "Update README with new report links" || echo "No changes to commit"
           
           # Push the changes back to the main branch
           git push origin main
