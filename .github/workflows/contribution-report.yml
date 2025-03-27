@@ -22,6 +22,13 @@ jobs:
           # Create reports directory if it doesn't exist
           mkdir -p reports
           
+          # Check if the report already exists
+          if [ -f "$REPORT_FILE" ]; then
+            echo "Report file already exists. Overwriting: $REPORT_FILE"
+          else
+            echo "Creating new report file: $REPORT_FILE"
+          fi
+
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")  # List of organizations
           DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
@@ -55,6 +62,8 @@ jobs:
               REPORT+="---\n"
             done
           done
+          
+          # Write the report to the file (will overwrite if file exists)
           echo -e "$REPORT" > "$REPORT_FILE"
           
       - name: Commit and push the report to GitHub
@@ -62,6 +71,10 @@ jobs:
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
           git remote set-url origin https://x-access-token:${{ secrets.WEEKLYCLASSIC }}@github.com/AshleyHenry15/github-work.git
-          git add reports/contributions-*.md  # Ensure it adds reports in the 'reports' directory
-          git commit -m "Update contribution report for $DATE"
+          
+          # Ensure it adds reports in the 'reports' directory
+          git add reports/contributions-*.md  
+          
+          # Force commit and push even if there are no changes
+          git commit -m "Update contribution report for $DATE" || echo "No changes to commit"
           git push origin main
