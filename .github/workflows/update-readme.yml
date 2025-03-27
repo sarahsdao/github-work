@@ -5,7 +5,7 @@ on:
     - cron: '0 0 * * *'  # Runs daily at midnight UTC
   workflow_dispatch:  # Allows manual triggering
   workflow_run:
-    workflows: ["Generate GitHub Contributions Report"]
+    workflows: ["Generate GitHub Contribution Report"]
     types:
       - completed
 
