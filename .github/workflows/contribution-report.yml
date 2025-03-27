@@ -20,60 +20,106 @@ jobs:
           REPORT_FILE="reports/contributions-$DATE.md"
           mkdir -p reports
 
+          # Start report
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
-          REPORT+="### 🔹 Contribution Summary\n\n"
-          REPORT+="| Repository | 🐞 Issues Opened | 🚪 Issues Closed | 🔀 PRs Opened | 🔒 PRs Merged | 📝 PR Reviews |\n"
-          REPORT+="|------------|----------------|----------------|-------------|-------------|-------------|\n"
+
+          # Overall Summary Table
+          SUMMARY_TABLE="### 🔹 Overall Contribution Summary\n\n"
+          SUMMARY_TABLE+="| Repository | 🐞 Issues Opened | 🚪 Issues Closed | 🔀 PRs Opened | 🔒 PRs Merged | 📝 PR Reviews |\n"
+          SUMMARY_TABLE+="|------------|----------------|----------------|-------------|-------------|-------------|\n"
 
           ORGS=("rstudio" "posit-dev")
-          DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
+          DATE_LIMIT=$(date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
 
-          for ORG in "${ORGS[@]}"; do
-            EVENTS=$(curl -s -H "Authorization: token $TOKEN" \
-              "https://api.github.com/users/$USERNAME/events?per_page=100")
+          # Fetch all GitHub events with pagination
+          EVENTS="[]"
+          PAGE=1
+          while :; do
+            NEW_EVENTS=$(curl -s -H "Authorization: token $TOKEN" \
+              "https://api.github.com/users/$USERNAME/events?page=$PAGE&per_page=100")
 
-            ACTIVE_REPOS=$(echo "$EVENTS" | jq -r --arg DATE "$DATE_LIMIT" '[.[] | select(.created_at > $DATE) | .repo.name] | unique | .[]')
-            if [[ -z "$ACTIVE_REPOS" ]]; then
-              continue
+            COUNT=$(echo "$NEW_EVENTS" | jq 'length')
+
+            # Stop if no more events
+            if [ "$COUNT" -eq 0 ]; then
+              break
             fi
 
+            EVENTS=$(echo "$EVENTS $NEW_EVENTS" | jq -s 'add')  # Merge JSON arrays
+            ((PAGE++))
+          done
+
+          echo "DEBUG: Total events fetched: $(echo "$EVENTS" | jq 'length')"
+
+          # Get unique repositories from events
+          ACTIVE_REPOS=$(echo "$EVENTS" | jq -r --arg DATE "$DATE_LIMIT" \
+            '[.[] | select(.created_at > $DATE) | .repo.name] | unique | .[]')
+
+          if [[ -z "$ACTIVE_REPOS" ]]; then
+            echo "No contributions found in the past 7 days."
+            exit 0
+          fi
+
+          # Track total counts for each category
+          TOTAL_ISSUES_OPENED=0
+          TOTAL_ISSUES_CLOSED=0
+          TOTAL_PRS_OPENED=0
+          TOTAL_MERGED_PRS=0
+          TOTAL_REVIEWS=0
+
+          for ORG in "${ORGS[@]}"; do
             for REPO in $ACTIVE_REPOS; do
               if [[ "$REPO" != "$ORG/"* ]]; then
                 continue
               fi
 
-              ISSUE_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | length')
-              CLOSED_ISSUE_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="closed" and .repo.name==$REPO and .created_at > $DATE)] | length')
-              PR_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | length')
-              MERGED_PR_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="closed" and .payload.pull_request.merged == true and .repo.name==$REPO and .created_at > $DATE)] | length')
-              REVIEW_COUNT=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | length')
+              echo "Processing repository: $REPO"
 
-              REPORT+="| [$REPO](https://github.com/$REPO) | $ISSUE_COUNT | $CLOSED_ISSUE_COUNT | $PR_COUNT | $MERGED_PR_COUNT | $REVIEW_COUNT |\n"
+              # Get detailed lists of items
+              ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" \
+                '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | 
+                 map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
 
-              REPORT+="\n---\n\n"
-              REPORT+="### 📌 Repository: [$REPO](https://github.com/$REPO)\n\n"
-              REPORT+="#### 🐞 Issues Opened ($ISSUE_COUNT total)\n"
-              ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
-              REPORT+="${ISSUES:-_No new issues_\n}\n\n"
+              CLOSED_ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" \
+                '[.[] | select(.type=="IssuesEvent" and .payload.action=="closed" and .repo.name==$REPO and .created_at > $DATE)] | 
+                 map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
 
-              REPORT+="#### 🚪 Issues Closed ($CLOSED_ISSUE_COUNT total)\n"
-              CLOSED_ISSUES=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="IssuesEvent" and .payload.action=="closed" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.issue.title)](\(.payload.issue.html_url))") | join("\n")')
-              REPORT+="${CLOSED_ISSUES:-_No closed issues_\n}\n\n"
+              PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" \
+                '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | 
+                 map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
 
-              REPORT+="#### 🔀 Pull Requests Opened ($PR_COUNT total)\n"
-              PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="opened" and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
-              REPORT+="${PRS:-_No new PRs_\n}\n\n"
+              MERGED_PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" \
+                '[.[] | select(.type=="PullRequestEvent" and .payload.action=="closed" and .payload.pull_request.merged == true and .repo.name==$REPO and .created_at > $DATE)] | 
+                 map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
 
-              REPORT+="#### 🔒 Merged Pull Requests ($MERGED_PR_COUNT total)\n"
-              MERGED_PRS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestEvent" and .payload.action=="closed" and .payload.pull_request.merged == true and .repo.name==$REPO and .created_at > $DATE)] | map("- [\(.payload.pull_request.title)](\(.payload.pull_request.html_url))") | join("\n")')
-              REPORT+="${MERGED_PRS:-_No merged PRs_\n}\n\n"
+              REVIEWS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" \
+                '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | 
+                 map("- [Reviewed PR #\(.payload.pull_request.number)](\(.payload.review.html_url))") | join("\n")')
 
-              REPORT+="#### 📝 PR Reviews ($REVIEW_COUNT total)\n"
-              REVIEWS=$(echo "$EVENTS" | jq -r --arg REPO "$REPO" --arg DATE "$DATE_LIMIT" '[.[] | select(.type=="PullRequestReviewEvent" and .repo.name==$REPO and .created_at > $DATE)] | map("- [Reviewed PR #\(.payload.pull_request.number)](\(.payload.review.html_url))") | join("\n")')
-              REPORT+="${REVIEWS:-_No new reviews_\n}\n\n"
+              # Count the actual number of list items
+              ISSUE_COUNT=$(echo "$ISSUES" | grep -c '^-' || echo 0)
+              CLOSED_ISSUE_COUNT=$(echo "$CLOSED_ISSUES" | grep -c '^-' || echo 0)
+              PR_COUNT=$(echo "$PRS" | grep -c '^-' || echo 0)
+              MERGED_PR_COUNT=$(echo "$MERGED_PRS" | grep -c '^-' || echo 0)
+              REVIEW_COUNT=$(echo "$REVIEWS" | grep -c '^-' || echo 0)
 
-              REPORT+="---\n"
+              # Update total counts
+              TOTAL_ISSUES_OPENED=$((TOTAL_ISSUES_OPENED + ISSUE_COUNT))
+              TOTAL_ISSUES_CLOSED=$((TOTAL_ISSUES_CLOSED + CLOSED_ISSUE_COUNT))
+              TOTAL_PRS_OPENED=$((TOTAL_PRS_OPENED + PR_COUNT))
+              TOTAL_MERGED_PRS=$((TOTAL_MERGED_PRS + MERGED_PR_COUNT))
+              TOTAL_REVIEWS=$((TOTAL_REVIEWS + REVIEW_COUNT))
+
+              # Add repo to summary table
+              SUMMARY_TABLE+="| [$REPO](https://github.com/$REPO) | $ISSUE_COUNT | $CLOSED_ISSUE_COUNT | $PR_COUNT | $MERGED_PR_COUNT | $REVIEW_COUNT |\n"
+
             done
           done
+
+          # Add total row to summary table
+          SUMMARY_TABLE+="| **Total** | **$TOTAL_ISSUES_OPENED** | **$TOTAL_ISSUES_CLOSED** | **$TOTAL_PRS_OPENED** | **$TOTAL_MERGED_PRS** | **$TOTAL_REVIEWS** |\n\n"
+
+          # Combine summary with full report
+          REPORT+="$SUMMARY_TABLE"
 
           echo -e "$REPORT" > "$REPORT_FILE"
