@@ -16,7 +16,7 @@ jobs:
         run: |
           USERNAME="sarahsdao"
           TOKEN="${{ secrets.WEEKLYCLASSIC }}"
-          DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  
+          DATE=$(TZ="America/Chicago" date +"%Y-%m-%d")  
           REPORT_FILE="reports/contributions-$DATE.md"
           mkdir -p reports
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
