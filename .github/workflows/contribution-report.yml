@@ -2,7 +2,7 @@ name: Generate GitHub Contribution Report
 
 on:
   schedule:
-    - cron: "0 19 * * 5"  # Runs every Friday at 3 PM EST
+    - cron: "0 19 * * 5"  # Runs every Friday at 3 PM CST
   workflow_dispatch:
 
 jobs:
