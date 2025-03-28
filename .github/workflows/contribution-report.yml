@@ -14,14 +14,14 @@ jobs:
 
       - name: Fetch GitHub Contributions (Last 7 Days)
         run: |
-          USERNAME="AshleyHenry15"
+          USERNAME="sarahsdao"
           TOKEN="${{ secrets.WEEKLYCLASSIC }}"
           DATE=$(TZ="America/New_York" date +"%Y-%m-%d")  
           REPORT_FILE="reports/contributions-$DATE.md"
           mkdir -p reports
           REPORT="## 📝 Weekly Contribution Report ($DATE)\n\n"
           ORGS=("rstudio" "posit-dev")
-          DATE_LIMIT=$(TZ="America/New_York" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
+          DATE_LIMIT=$(TZ="America/Chicago" date -d "7 days ago" --utc +"%Y-%m-%dT%H:%M:%SZ")
           # Global Counters
           TOTAL_ISSUES=0
           TOTAL_CLOSED_ISSUES=0
