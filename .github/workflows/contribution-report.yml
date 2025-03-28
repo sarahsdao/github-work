@@ -15,7 +15,7 @@ jobs:
       - name: Fetch GitHub Contributions (Last 7 Days)
         run: |
           USERNAME="sarahsdao"
-          TOKEN="${{ secrets.WEEKLYCLASSIC }}"
+          TOKEN="${{ secrets.weeklyreport }}"
           DATE=$(TZ="America/Chicago" date +"%Y-%m-%d")  
           REPORT_FILE="reports/contributions-$DATE.md"
           mkdir -p reports
